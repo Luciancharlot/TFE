@@ -31,12 +31,12 @@
 
         <!-- Recherche dynamique pour le type de bière -->
         <label for="preference_type">Type de Bière Préféré :</label><br>
-        <input list="beer_type_results" id="preference_type" name="preference_type" onkeyup="searchBeerTypes()">
+        <input list="beer_type_results" id="preference_type" name="preference_type" onfocus="fetchAllBeerTypes()" onkeyup="searchBeerTypes()">
         <datalist id="beer_type_results"></datalist><br><br>
 
         <!-- Recherche dynamique pour la bière préférée -->
         <label for="preference_beer">Bière Préférée :</label><br>
-        <input list="beer_results" id="preference_beer" name="preference_beer" onkeyup="searchBeers()">
+        <input list="beer_results" id="preference_beer" name="preference_beer" onfocus="fetchAllBeers()" onkeyup="searchBeers()">
         <datalist id="beer_results"></datalist><br><br>
 
         <input type="submit" value="Envoyer">
