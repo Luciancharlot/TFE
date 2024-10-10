@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>TFE - Préférences de Bière</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Accueil</a></li>
+            <li><a href="/form">Questionnaire</a></li>
+            <li><a href="/command">Commande</a></li>
+            <li><a href="/analytics">Statistiques</a></li>
+        </ul>
+    </nav>
+
+    <h1>Questionnaire sur les Préférences de Bière</h1>
+    <form action="/submit_preferences" method="POST">
+        <label for="bitterness">Amertume :</label><br>
+        <input type="radio" id="faible" name="bitterness" value="1"> Faible<br>
+        <input type="radio" id="moyenne" name="bitterness" value="2"> Moyenne<br>
+        <input type="radio" id="forte" name="bitterness" value="3"> Forte<br><br>
+
+        <label for="sweetness">Sucré :</label><br>
+        <input type="radio" id="faible" name="sweetness" value="1"> Faible<br>
+        <input type="radio" id="moyenne" name="sweetness" value="2"> Moyenne<br>
+        <input type="radio" id="eleve" name="sweetness" value="3"> Élevé<br><br>
+
+        <label for="fruitiness">Fruité :</label><br>
+        <input type="radio" id="faible" name="fruitiness" value="1"> Faible<br>
+        <input type="radio" id="moyenne" name="fruitiness" value="2"> Moyenne<br>
+        <input type="radio" id="eleve" name="fruitiness" value="3"> Élevé<br><br>
+
+        <label for="alcohol_content">Niveau d'Alcool :</label><br>
+        <input type="radio" id="faible" name="alcohol_content" value="1"> Faible (<4%)<br>
+        <input type="radio" id="moyenne" name="alcohol_content" value="2"> Moyenne (entre 4-6%)<br>
+        <input type="radio" id="forte" name="alcohol_content" value="3"> Forte (>6%)<br><br>
+
+        <label for="preference_type">Type de Bière Préféré :</label><br>
+        <input list="beer_type_results" id="preference_type" name="preference_type" onfocus="fetchAllBeerTypes()" onkeyup="searchBeerTypes()">
+        <datalist id="beer_type_results"></datalist><br><br>
+
+        <label for="preference_beer">Bière Préférée :</label><br>
+        <input list="beer_results" id="preference_beer" name="preference_beer" onfocus="fetchAllBeers()" onkeyup="searchBeers()">
+        <datalist id="beer_results"></datalist><br><br>
+
+        <input type="submit" value="Envoyer">
+    </form>
+
+    <script src="../static/script.js"></script>
+</body>
+</html>

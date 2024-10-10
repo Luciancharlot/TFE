@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accueil - Bar</title>
+    <title>Analyse de Données - Bar</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
@@ -17,26 +17,26 @@
     </nav>
 
     <header>
-        <h1>Bienvenue au Bar XYZ</h1>
-        <p>Découvrez nos services et profitez de notre sélection de bières !</p>
+        <h1>Statistiques du Bar</h1>
     </header>
 
     <section>
-        <h2>Nos Services</h2>
-        <ul>
-            <li>Recommandation de bières personnalisées</li>
-            <li>Commande en ligne et paiement sécurisé</li>
-            <li>Analyses des tendances et statistiques pour le responsable</li>
-        </ul>
+        <h2>Ventes par Mois</h2>
+        <canvas id="salesChart"></canvas>
     </section>
 
     <section>
-        <h2>Accéder au Questionnaire</h2>
-        <a href="/questionnaire" class="button">Commencer la Recommandation</a>
+        <h2>Bières Populaires</h2>
+        <ul id="popularBeers">
+            <li>Leffe Blond</li>
+            <li>Chimay Bleue</li>
+        </ul>
     </section>
 
     <footer>
         <p>&copy; 2024 Bar XYZ. Tous droits réservés.</p>
     </footer>
+
+    <script src="../static/script.js"></script>
 </body>
 </html>

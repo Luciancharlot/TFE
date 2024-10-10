@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commande - Bar</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Accueil</a></li>
+            <li><a href="/form">Questionnaire</a></li>
+            <li><a href="/command">Commande</a></li>
+            <li><a href="/analytics">Statistiques</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Passer une Commande</h1>
+    </header>
+
+    <section>
+        <h2>Sélectionnez vos bières préférées</h2>
+        <form action="/submit_order" method="POST">
+            <div class="beer-item">
+                <label for="beer_1">Leffe Blond</label>
+                <input type="number" id="beer_1" name="beer_1" min="0" placeholder="Quantité">
+            </div>
+            <div class="beer-item">
+                <label for="beer_2">Chimay Bleue</label>
+                <input type="number" id="beer_2" name="beer_2" min="0" placeholder="Quantité">
+            </div>
+            <button type="submit" class="button">Passer la commande</button>
+        </form>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Bar XYZ. Tous droits réservés.</p>
+    </footer>
+</body>
+</html>

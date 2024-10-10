@@ -4,6 +4,26 @@ import urllib
 
 app = Flask(__name__)
 
+# Page d'accueil
+#@app.route('/')
+#def home():
+#    return render_template('index.html')
+
+# Page du formulaire (questionnaire)
+@app.route('/form')
+def questionnaire():
+    return render_template('form.html')
+
+# Page de commande
+@app.route('/command')
+def commande():
+    return render_template('command.html')
+
+# Page d'analyse des données
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
 # Configuration de la base de données SQL Server
 params = urllib.parse.quote_plus("DRIVER={ODBC Driver 17 for SQL Server};"
                                  "SERVER=EL-COABITUS\TFE;DATABASE=TFE;"
