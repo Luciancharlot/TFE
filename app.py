@@ -5,10 +5,7 @@ import urllib
 app = Flask(__name__)
 
 # Configuration de la base de données SQL Server
-params = urllib.parse.quote_plus("DRIVER={ODBC Driver 17 for SQL Server};"
-                                 "SERVER=EL-COABITUS\TFE;DATABASE=TFE;"
-                                 "Trusted_Connection=yes;")
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mssql+pyodbc:///?odbc_connect={params}"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)

@@ -1,0 +1,88 @@
+-- Table des brasseries
+CREATE TABLE Breweries (
+    brewery_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    brewery_name TEXT
+);
+
+-- Table des types de bières
+CREATE TABLE Beer_Types (
+    type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type_name TEXT,
+    type_description TEXT
+);
+
+-- Table des bières
+CREATE TABLE Beers (
+    beer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    beer_name TEXT,
+    abv REAL, -- DECIMAL remplacé par REAL pour SQLite
+    brewery_id INTEGER, -- Référence à la table Breweries
+    type_id INTEGER, -- Référence à la table Beer_Types
+    image TEXT,
+    beer_description TEXT,
+    beer_price REAL, -- Champ ajouté, REAL utilisé à la place de DECIMAL
+    beer_name_nl TEXT, 
+    beer_name_en TEXT,
+    FOREIGN KEY (brewery_id) REFERENCES Breweries(brewery_id),
+    FOREIGN KEY (type_id) REFERENCES Beer_Types(type_id)
+);
+
+-- Table des utilisateurs
+CREATE TABLE Users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    email TEXT,
+    birth_date TEXT, -- SQLite ne supporte pas DATE de la même manière, donc TEXT utilisé pour stocker les dates
+    gender TEXT,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- TIMESTAMP avec valeur par défaut actuelle
+);
+
+-- Table des commandes
+CREATE TABLE Orders (
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER, -- Référence à la table Users
+    total_amount REAL, -- REAL utilisé pour les valeurs décimales
+    status TEXT, -- ouvert ou fermé
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    closed TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+-- Table des items commandés
+CREATE TABLE OrderItems (
+    order_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER, -- Référence à la table Orders
+    beer_id INTEGER, -- Référence à la table Beers
+    quantity INTEGER,
+    price REAL, -- (beer_price * quantity)
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id),
+    FOREIGN KEY (beer_id) REFERENCES Beers(beer_id)
+);
+
+-- Table des évaluations
+CREATE TABLE Ratings (
+    rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER, -- Référence à la table Users
+    beer_id INTEGER, -- Référence à la table Beers
+    rating INTEGER CHECK (rating >= 1 AND rating <= 10), -- Évaluation de 1 à 10
+    rating_justification TEXT,
+    rating_description TEXT,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (beer_id) REFERENCES Beers(beer_id)
+);
+
+-- Table des préférences
+CREATE TABLE Preferences (
+    preference_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER, -- Référence à la table Users
+    preference_type INTEGER, -- Référence à la table Beer_Types
+    bitterness INTEGER,
+    sweetness INTEGER,
+    fruitness INTEGER,
+    alcohol_content INTEGER,
+    preference_beer INTEGER, -- Référence à la table Beers
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (preference_type) REFERENCES Beer_Types(type_id),
+    FOREIGN KEY (preference_beer) REFERENCES Beers(beer_id)
+);

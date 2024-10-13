@@ -20,6 +20,8 @@ CREATE TABLE Beers (
     image VARCHAR(255),
     beer_description TEXT,
     beer_price DECIMAL(10, 2), -- Champ ajouté
+    beer_name_nl VARCHAR(255), 
+    beer_name_en VARCHAR(255),
     FOREIGN KEY (brewery_id) REFERENCES Breweries(brewery_id),
     FOREIGN KEY (type_id) REFERENCES Beer_Types(type_id)
 );
