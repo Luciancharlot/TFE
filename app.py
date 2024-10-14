@@ -5,7 +5,7 @@ import urllib
 app = Flask(__name__)
 
 # Configuration de la base de données SQL Server
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('libsql://tfe-luciancharlot.turso.io')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
