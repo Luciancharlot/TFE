@@ -4,12 +4,8 @@ import urllib
 
 app = Flask(__name__)
 
-# Page d'accueil
-#@app.route('/')
-#def home():
-#    return render_template('index.html')
 
-# Page du formulaire (questionnaire)
+# Page du formulaire 
 @app.route('/form')
 def questionnaire():
     return render_template('form.html')

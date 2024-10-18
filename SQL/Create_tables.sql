@@ -7,7 +7,9 @@ CREATE TABLE Breweries (
 CREATE TABLE Beer_Types (
     type_id INT IDENTITY(1,1) PRIMARY KEY,
     type_name VARCHAR(255),
-    type_description TEXT
+    type_description TEXT,
+    type_name_en VARCHAR(255),
+    type_name_nl VARCHAR(255)
 );
 
 -- Table des bières
