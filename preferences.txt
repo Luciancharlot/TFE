@@ -1,2 +1,0 @@
-Amertume: None, Sucre: None, Alcool: None, Type: IPA
-Amertume: 1, Sucre: 3, Alcool: 3, Type: Rouge
