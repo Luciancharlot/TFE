@@ -25,14 +25,14 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Analytics</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/*<TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate('Form')}
       >
         <Text style={styles.buttonText}>Fill Form</Text>
       </TouchableOpacity>
 
-      {/*<TouchableOpacity
+      <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate('Command')}
       >

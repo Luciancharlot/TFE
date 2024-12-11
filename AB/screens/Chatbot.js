@@ -1,34 +1,41 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import axios from 'axios';
 
 const Chatbot = () => {
-  const [messages, setMessages] = useState([]); // Liste des messages
-  const [input, setInput] = useState(''); // Texte entré par l'utilisateur
-  const [loading, setLoading] = useState(false); // Indique si une requête est en cours
-  const [conversationStarted, setConversationStarted] = useState(false); // Indique si la conversation a commencé
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [conversationStarted, setConversationStarted] = useState(false);
+  const flatListRef = useRef(null); // Référence pour FlatList
 
-  // Fonction pour envoyer un message à GPT
   const sendMessage = async (messageContent) => {
     const userMessage = { role: 'user', content: messageContent || input.trim() };
-    if (!userMessage.content) return; // Ne pas envoyer de message vide
+    if (!userMessage.content) return;
 
-    // Ajouter le message de l'utilisateur à la liste des messages
     setMessages((prevMessages) => [...prevMessages, { sender: 'user', text: userMessage.content }]);
-    if (!messageContent) setInput(''); // Réinitialiser l'input si le message n'est pas initial
-    setLoading(true); // Indiquer qu'une requête est en cours
+    if (!messageContent) setInput('');
+    setLoading(true);
 
     try {
-      // Faire une requête à l'API OpenAI
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-3.5-turbo', // Remplacez par l'ID de votre modèle personnalisé
+          model: 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system',
               content:
-                'Tu es un expert en recommandation de bières belges. Règles d\'expertise : Préparation des données : Avant de poser la première question, le modèle doit ouvrir et analyser le fichier Excel fourni(sans en parler à l\'utilisateur).Utiliser la feuille Beer_Type pour s\'informer sur les types de bières disponibles.Utiliser la feuille Form Response 1 pour générer des idées de questions supplémentaires ou pour ajuster les recommandations.Ne proposer que des bières présentes dans la feuille Beers. Poser 5 à 6 questions au total pour affiner la recommandation.Chaque question doit être claire, concise et les réponses doivent être claire, concise, numérotées pour que l\'utilisateur puisse répondre avec le numéro correspondant.Utiliser les informations des feuilles Excel pour enrichir les questions et s\'assurer que toutes les bières proposées proviennent de la liste de la feuille Beers.Une fois que toutes les questions sont posées, proposer 4-5 bières sous forme de noms uniquement.Les bières doivent toujours provenir de la feuille Beers de l\'Excel analysé précédemment.',
+                'Règles d\'expertise en recommandation de bières belges : Préparation des données : Récupération des données : Avant de poser la première question, le modèle doit ouvrir et analyser le fichier Excel fourni (sans en parler à l\'utilisateur). Utiliser la feuille Beer_Type pour s\'informer sur les types de bières disponibles. Utiliser la feuille Form Response 1 pour générer des idées de questions supplémentaires ou pour ajuster les recommandations. Ne proposer que des bières présentes dans la feuille Beers. Structure de la recommandation : Poser 5 à 6 questions au total pour affiner la recommandation. Chaque question doit être claire, concise et les réponses doivent être claires, concises, numérotées pour que l\'utilisateur puisse répondre avec le numéro correspondant. Utiliser les informations des feuilles Excel pour enrichir les questions et s\'assurer que toutes les bières proposées proviennent de la liste de la feuille Beers. Personnalisation de la recommandation : Question 1 : \"Comment évalueriez-vous votre niveau de connaissance et d\'expérience en matière de bière ?\" Réponses : Débutant Intermédiaire Expert. Si l\'utilisateur est un débutant, recommander des bières classiques et connues. Si l\'utilisateur est un expert, recommander des bières plus exclusives et moins courantes. Exécution des recommandations : Une fois que toutes les questions sont posées, proposer 4-5 bières sous forme de noms uniquement. Les bières doivent toujours provenir de la feuille Beers de l\'Excel analysé précédemment.',
             },
             ...messages.map((msg) => ({
               role: msg.sender === 'user' ? 'user' : 'assistant',
@@ -40,14 +47,16 @@ const Chatbot = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer`, // Remplacez par votre clé API
+            Authorization: `Bearer API-KEY`,
           },
         }
       );
 
-      // Ajouter la réponse de GPT aux messages
       const gptMessage = response.data.choices[0].message.content;
       setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: gptMessage }]);
+
+      // Défilement automatique après avoir ajouté la réponse
+      flatListRef.current?.scrollToEnd({ animated: true });
     } catch (error) {
       console.error('Erreur avec l\'API GPT :', error);
       setMessages((prevMessages) => [
@@ -55,24 +64,21 @@ const Chatbot = () => {
         { sender: 'bot', text: 'Une erreur est survenue. Veuillez réessayer.' },
       ]);
     } finally {
-      setLoading(false); // Indiquer que la requête est terminée
+      setLoading(false);
     }
   };
 
-  // Fonction pour démarrer une conversation
   const startConversation = (language) => {
     const welcomeMessages = {
-        French: 'Commence tes recommendations en francais ',
-        English: 'Start your recommendations in English',
-        Dutch: 'Begin uw aanbevelingen in het Nederlands',
+      French: 'Commence tes recommendations en francais ',
+      English: 'Start your recommendations in English',
+      Dutch: 'Begin uw aanbevelingen in het Nederlands',
     };
 
-    // Envoyer le message de démarrage au bot
     sendMessage(welcomeMessages[language]);
-    setConversationStarted(true); // Masquer les boutons une fois la conversation commencée
+    setConversationStarted(true);
   };
 
-  // Fonction pour afficher chaque message
   const renderMessage = ({ item }) => {
     const isUser = item.sender === 'user';
     return (
@@ -83,8 +89,11 @@ const Chatbot = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Boutons pour choisir la langue (uniquement au démarrage) */}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={10} // Espace supplémentaire pour iOS
+    >
       {!conversationStarted && (
         <View style={styles.languageContainer}>
           <TouchableOpacity
@@ -110,15 +119,15 @@ const Chatbot = () => {
         </View>
       )}
 
-      {/* Liste des messages */}
       <FlatList
+        ref={flatListRef} // Référence pour gérer le défilement
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.messageList}
+        contentContainerStyle={[styles.messageList, { paddingBottom: 20 }]} // Espace en bas
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })} // Auto-scroll lorsque la taille change
       />
 
-      {/* Input pour écrire un message */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -130,7 +139,7 @@ const Chatbot = () => {
           <Text style={styles.sendButtonText}>{loading ? '...' : 'Send'}</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -138,8 +147,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   languageContainer: {
     flexDirection: 'row',
@@ -148,13 +155,10 @@ const styles = StyleSheet.create({
     marginVertical: 50,
   },
   languageButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginHorizontal: 10,
+    backgroundColor: '#FAE96F',
+    padding: 10,
+    borderRadius: 5,
+    margin: 15,
   },
   languageText: {
     color: '#333',
@@ -209,18 +213,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  languageContainer: {
-    flex: 1, // Prend tout l'espace disponible
-    flexDirection: 'row', // Place les boutons horizontalement
-    justifyContent: 'center', // Centre les boutons horizontalement
-    alignItems: 'center', // Centre les boutons verticalement
-  },
-  languageButton: {
-    backgroundColor: '#FAE96F', // Couleur orange
-    padding: 10, // Espace intérieur du bouton
-    borderRadius: 5, // Coins arrondis
-    margin: 15, // Marge entre les boutons
   },
 });
 
