@@ -13,7 +13,7 @@ const HomeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('Command')}
+        onPress={() => navigation.navigate('Order')}
       >
         <Text style={styles.buttonText}>Order Beer</Text>
       </TouchableOpacity>
