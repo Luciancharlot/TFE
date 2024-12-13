@@ -6,29 +6,43 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ScrollView,
-  Dimensions,
 } from 'react-native';
+import { database } from '../firebase';
+import { ref, update,runTransaction } from 'firebase/database';
 
 const BeerDetails = ({ route, navigation }) => {
-  const { beer, setCartCount } = route.params;
+  const { beer, orderID } = route.params;
   const [quantity, setQuantity] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleAddToCart = () => {
-    setCartCount((prevCount) => prevCount + quantity);
-    navigation.goBack();
-  };
-
-  const handleIncrease = () => {
-    setQuantity((prev) => prev + 1);
-  };
-
-  const handleDecrease = () => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
+  const handleAddToCart = async () => {
+    try {
+      const beerRef = ref(database, `orders/${orderID}/${beer.id}`);
+  
+      // Vérifiez si le nœud existe, sinon initialisez-le
+      await update(beerRef, {
+        ...beer,
+        quantity: beer.quantity || 0, // Par défaut, quantité = 0
+      });
+  
+      // Utilisez une transaction pour mettre à jour la quantité
+      await runTransaction(beerRef, (currentData) => {
+        if (currentData) {
+          return { ...currentData, quantity: (currentData.quantity || 0) + quantity };
+        } else {
+          return { ...beer, quantity };
+        }
+      });
+  
+      console.log('Beer successfully added to the cart');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error adding beer to cart:', error);
     }
   };
+
+  const handleIncrease = () => setQuantity((prev) => prev + 1);
+  const handleDecrease = () => quantity > 1 && setQuantity((prev) => prev - 1);
 
   const handleEditQuantity = (value) => {
     const numericValue = parseInt(value, 10);
@@ -37,23 +51,16 @@ const BeerDetails = ({ route, navigation }) => {
     }
   };
 
-  const screenWidth = Dimensions.get('window').width;
-  const contentWidth = screenWidth * 0.9; // 90% de la largeur de l'écran
-
   return (
     <View style={styles.container}>
-      <View style={[styles.content, { width: contentWidth }]}>
-        <Image
-          source={{ uri: beer.image }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-        <View style={styles.detailsContainer}>
+      <View style={styles.detailsContainer}>
+        <Image source={{ uri: beer.image }} style={styles.image} resizeMode="contain" />
+        <View style={styles.infoContainer}>
           <Text style={styles.name}>{beer.beer_name}</Text>
-          <Text style={styles.info}>Description: {beer.beer_description}</Text>
+          <Text style={styles.description}>{beer.beer_description}</Text>
           <Text style={styles.info}>ABV: {beer.abv}%</Text>
           <Text style={styles.info}>
-            Price: <Text style={styles.price}>{beer.beer_price} €</Text>
+            Price: <Text style={styles.price}>{beer.beer_price || 0} €</Text>
           </Text>
         </View>
       </View>
@@ -92,30 +99,31 @@ const BeerDetails = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center', // Centre verticalement
-    alignItems: 'center', // Centre horizontalement
     backgroundColor: '#f5f5f5',
     padding: 16,
   },
-  content: {
+  detailsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 16,
   },
   image: {
-    width: '40%', // 40% de la largeur du contenu
+    width: '40%',
     height: 200,
     marginRight: 16,
   },
-  detailsContainer: {
+  infoContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   name: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
-    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 16,
   },
   info: {
     fontSize: 16,
@@ -131,7 +139,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 16,
-    justifyContent: 'center',
   },
   quantityButton: {
     backgroundColor: '#EC9D00',
@@ -151,7 +158,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    textAlign: 'center',
   },
   quantityInput: {
     borderBottomWidth: 1,
@@ -167,12 +173,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 8,
     marginTop: 16,
-    alignSelf: 'center',
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

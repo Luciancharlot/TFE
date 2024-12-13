@@ -7,7 +7,7 @@ import AnalyticsScreen from './screens/AnalyticsScreen';
 import FormScreen from './screens/FormScreen';
 import Chatbot from './screens/Chatbot';
 import BeerDetails from './screens/BeerDetails';
-
+import Cart from './screens/Cart';
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -20,6 +20,7 @@ export default function App() {
         <Stack.Screen name="Form" component={FormScreen} options={{ headerShown: false }}/>
         <Stack.Screen name="Chatbot" component={Chatbot} options={{ headerShown: false }}/>
         <Stack.Screen name="BeerDetails" component={BeerDetails} options={{ headerShown: false }}/>
+        <Stack.Screen name="Cart" component={Cart} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
