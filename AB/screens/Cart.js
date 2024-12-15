@@ -21,10 +21,13 @@ const Cart = ({ route, navigation }) => {
     const unsubscribe = onValue(orderRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const items = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
+        const items = Object.keys(data)
+          .map((key) => ({
+            id: key,
+            ...data[key],
+          }))
+          .filter((item) => item.quantity > 0 && item.beer_name);
+
         setCartItems(items);
         calculateSubtotal(items);
       } else {
@@ -71,7 +74,41 @@ const Cart = ({ route, navigation }) => {
 
   const handleRemove = (item) => {
     const itemRef = ref(database, `orders/${orderID}/${item.id}`);
-    remove(itemRef);
+    remove(itemRef)
+      .then(() => {
+        console.log(`${item.beer_name} removed from cart`);
+      })
+      .catch((error) => console.error('Error removing item:', error));
+  };
+
+  const handleRemoveAll = () => {
+    const orderRef = ref(database, `orders/${orderID}`);
+    remove(orderRef)
+      .then(() => {
+        setCartItems([]);
+        setSubtotal(0);
+        console.log('All items removed from cart');
+      })
+      .catch((error) => console.error('Error removing all items:', error));
+  };
+  const handleOrder = () => {
+    const orderRef = ref(database, `orders/${orderID}`);
+    update(orderRef, { status: 'ordered' })
+      .then(() => {
+        console.log('Order status updated to "ordered"');
+        Alert.alert(
+          'Order Placed',
+          'Your order has been placed successfully! Thank you for shopping with us.',
+          [
+            {
+              text: 'Ok',
+              style: 'destructive',
+              onPress: () => navigation.navigate('Home'),
+            },
+          ]
+        ); // Retourne à l'écran précédent après avoir passé commande
+      })
+      .catch((error) => console.error('Error updating order status:', error));
   };
 
   const renderItem = ({ item }) => (
@@ -120,12 +157,23 @@ const Cart = ({ route, navigation }) => {
         <Text style={styles.subtotalText}>Subtotal:</Text>
         <Text style={styles.subtotalValue}>{subtotal} €</Text>
       </View>
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleRemoveAll}
+        >
+          <Text style={styles.actionButtonText}>Remove All</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.orderButton} onPress={handleOrder}>
+          <Text style={styles.orderButtonText}>Order</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -228,14 +276,46 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#EC9D00',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  actionButton: {
+    backgroundColor: '#970003',
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   closeButton: {
     backgroundColor: '#EC9D00',
     padding: 12,
     borderRadius: 8,
+    flex: 1,
     alignItems: 'center',
-    marginTop: 16,
+    marginHorizontal: 8,
   },
   closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  orderButton: {
+    backgroundColor: '#EC9D00',
+    padding: 12,
+    borderRadius: 10,
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  orderButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
