@@ -12,12 +12,13 @@ import { database } from '../firebase';
 import { ref, onValue, update, remove } from 'firebase/database';
 
 const Cart = ({ route, navigation }) => {
-  const { orderID } = route.params;
+  const { orderID, tableInfo } = route.params; // Récupération de tableInfo et orderID
   const [cartItems, setCartItems] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
 
   useEffect(() => {
-    const orderRef = ref(database, `orders/${orderID}`);
+    // Utilisation correcte de tableInfo.table_id
+    const orderRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
     const unsubscribe = onValue(orderRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -37,7 +38,7 @@ const Cart = ({ route, navigation }) => {
     });
 
     return () => unsubscribe();
-  }, [orderID]);
+  }, [orderID, tableInfo]);
 
   const calculateSubtotal = (items) => {
     const total = items.reduce(
@@ -48,13 +49,13 @@ const Cart = ({ route, navigation }) => {
   };
 
   const handleIncrease = (item) => {
-    const itemRef = ref(database, `orders/${orderID}/${item.id}`);
+    const itemRef = ref(database, `orders/${tableInfo.table_id}/${orderID}/${item.id}`);
     update(itemRef, { quantity: item.quantity + 1 });
   };
 
   const handleDecrease = (item) => {
     if (item.quantity > 1) {
-      const itemRef = ref(database, `orders/${orderID}/${item.id}`);
+      const itemRef = ref(database, `orders/${tableInfo.table_id}/${orderID}/${item.id}`);
       update(itemRef, { quantity: item.quantity - 1 });
     } else {
       Alert.alert(
@@ -73,7 +74,7 @@ const Cart = ({ route, navigation }) => {
   };
 
   const handleRemove = (item) => {
-    const itemRef = ref(database, `orders/${orderID}/${item.id}`);
+    const itemRef = ref(database, `orders/${tableInfo.table_id}/${orderID}/${item.id}`);
     remove(itemRef)
       .then(() => {
         console.log(`${item.beer_name} removed from cart`);
@@ -82,7 +83,7 @@ const Cart = ({ route, navigation }) => {
   };
 
   const handleRemoveAll = () => {
-    const orderRef = ref(database, `orders/${orderID}`);
+    const orderRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
     remove(orderRef)
       .then(() => {
         setCartItems([]);
@@ -91,8 +92,9 @@ const Cart = ({ route, navigation }) => {
       })
       .catch((error) => console.error('Error removing all items:', error));
   };
+
   const handleOrder = () => {
-    const orderRef = ref(database, `orders/${orderID}`);
+    const orderRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
     update(orderRef, { status: 'ordered' })
       .then(() => {
         console.log('Order status updated to "ordered"');
@@ -106,7 +108,7 @@ const Cart = ({ route, navigation }) => {
               onPress: () => navigation.navigate('Home'),
             },
           ]
-        ); // Retourne à l'écran précédent après avoir passé commande
+        );
       })
       .catch((error) => console.error('Error updating order status:', error));
   };
@@ -177,6 +179,7 @@ const Cart = ({ route, navigation }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

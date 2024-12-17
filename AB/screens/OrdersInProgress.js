@@ -17,17 +17,26 @@ const OrdersInProgress = () => {
     const ordersRef = ref(database, 'orders');
     const unsubscribe = onValue(ordersRef, (snapshot) => {
       const data = snapshot.val();
+      const fetchedOrders = [];
+
       if (data) {
-        const filteredOrders = Object.keys(data)
-          .filter((orderID) => data[orderID].status === 'ordered')
-          .map((orderID) => ({
-            id: orderID,
-            items: Object.values(data[orderID]).filter((item) => typeof item === 'object'),
-          }));
-        setOrders(filteredOrders);
-      } else {
-        setOrders([]);
+        Object.keys(data).forEach((tableID) => {
+          Object.keys(data[tableID]).forEach((orderID) => {
+            const orderData = data[tableID][orderID];
+            if (orderData.status === 'ordered') {
+              fetchedOrders.push({
+                id: orderID,
+                tableID: tableID,
+                items: Object.values(orderData).filter(
+                  (item) => typeof item === 'object'
+                ),
+              });
+            }
+          });
+        });
       }
+
+      setOrders(fetchedOrders);
     });
 
     return () => unsubscribe();
@@ -35,59 +44,47 @@ const OrdersInProgress = () => {
 
   const handleValidate = async (order) => {
     try {
-      const analyticsRef = ref(database, 'analytics'); // Référence principale pour analytics
-  
+      const analyticsRef = ref(database, 'analytics');
+
       for (const item of order.items) {
-        const beerName = item.beer_name; // Nom de la bière (pas modifié)
-        const typeId = item.type_id || 'Unknown'; // Remplace undefined par "Unknown"
+        const beerName = item.beer_name;
+        const typeId = item.type_id || 'Unknown';
         const quantity = item.quantity || 0;
-  
-        // Ignorer les articles sans quantité ou nom valide
+
         if (!beerName || quantity <= 0) continue;
-  
-        // Construire une référence pour l'article de la bière
+
         const analyticsItemRef = ref(database, `analytics/${beerName}`);
-  
-        // Récupérer l'état actuel de l'entrée
         const snapshot = await get(analyticsItemRef);
-  
-        const currentDate = new Date().toISOString(); // Date actuelle sous forme ISO
-  
+
+        const currentDate = new Date().toISOString();
+
         let updatedData = {
           quantity: quantity,
           type_name: typeId,
           dates: [currentDate],
         };
-  
+
         if (snapshot.exists()) {
-          // L'entrée existe déjà, on met à jour les données existantes
           const existingData = snapshot.val();
           updatedData.quantity = (existingData.quantity || 0) + quantity;
-  
-          // Fusionner les dates existantes avec la nouvelle date
           updatedData.dates = existingData.dates
             ? [...existingData.dates, currentDate]
             : [currentDate];
-  
-          updatedData.type_name = existingData.type_name || typeId; // Préserver le type_name
+          updatedData.type_name = existingData.type_name || typeId;
         }
-  
-        // Enregistrer les données mises à jour dans Firebase
+
         await update(analyticsItemRef, updatedData);
       }
-  
-      // Mettre à jour le statut de la commande comme "validated"
-      const orderRef = ref(database, `orders/${order.id}`);
+
+      const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
       await update(orderRef, { status: 'validated' });
-  
+
       Alert.alert('Success', `Order ${order.id} validated successfully.`);
     } catch (error) {
       console.error('Error validating order:', error.message);
       Alert.alert('Error', 'Failed to validate the order.');
     }
   };
-  
-  
 
   const handleRemove = (order) => {
     Alert.alert(
@@ -99,7 +96,7 @@ const OrdersInProgress = () => {
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
-            const orderRef = ref(database, `orders/${order.id}`);
+            const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
             remove(orderRef).then(() => {
               Alert.alert('Success', `Order ${order.id} removed successfully.`);
             });
@@ -111,7 +108,9 @@ const OrdersInProgress = () => {
 
   const renderOrder = ({ item }) => (
     <View style={styles.orderContainer}>
-      <Text style={styles.orderTitle}>Order ID: {item.id}</Text>
+      <Text style={styles.orderTitle}>
+        Table: {item.tableID} | Order ID: {item.id}
+      </Text>
       {item.items.map((beer, index) => (
         <View key={index} style={styles.itemContainer}>
           <Text>

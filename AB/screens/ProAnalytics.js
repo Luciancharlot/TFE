@@ -120,11 +120,13 @@ const ProAnalytics = () => {
 
   const renderItem = ({ item }) => {
     const typeName = beerTypes[item.type_name]?.type_name || 'Unknown';
+    const quantity = item.quantity || 0;
+  
     return (
       <View style={styles.itemContainer}>
         <Text style={styles.itemName}>{item.beer_name}</Text>
         <Text style={styles.itemDetails}>Type: {typeName}</Text>
-        <Text style={styles.itemDetails}>Quantity Sold: {item.quantity}</Text>
+        <Text style={styles.itemDetails}>Quantity Sold: {quantity}</Text>
       </View>
     );
   };

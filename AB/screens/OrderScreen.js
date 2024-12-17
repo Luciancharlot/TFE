@@ -21,6 +21,7 @@ const OrderScreen = () => {
   const [cartCount, setCartCount] = useState(0);
   const windowWidth = Dimensions.get('window').width;
   const cardWidth = (windowWidth - 80) / 3;
+  const tableInfo = route.params?.tableInfo || { table_id: 'default'}; 
 
   useEffect(() => {
     const beersRef = ref(database, 'beers');
@@ -39,7 +40,7 @@ const OrderScreen = () => {
       setBeerTypes(data);
     });
 
-    const ordersRef = ref(database, `orders/${orderID}`);
+    const ordersRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
     onValue(ordersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -65,11 +66,15 @@ const OrderScreen = () => {
 
     return (
       <TouchableOpacity
-        style={[styles.card, { width: cardWidth }]}
-        onPress={() =>
-          navigation.navigate('BeerDetails', { beer: item, orderID })
-        }
-      >
+      style={[styles.card, { width: cardWidth }]}
+      onPress={() =>
+        navigation.navigate('BeerDetails', { 
+          beer: item, 
+          orderID, 
+          tableInfo // Passe tableInfo ici
+        })
+      }
+    >
         <Image
           source={{ uri: item.image }}
           style={[styles.image, { width: cardWidth - 16, height: cardWidth - 125 }]}
@@ -95,7 +100,7 @@ const OrderScreen = () => {
         <Text style={styles.title}>Our Beers</Text>
         <TouchableOpacity
           style={styles.cartButton}
-          onPress={() => navigation.navigate('Cart', { orderID })}
+          onPress={() => navigation.navigate('Cart', { orderID, tableInfo })}
         >
           <Image
             source={require('../assets/cart-icon.png')}

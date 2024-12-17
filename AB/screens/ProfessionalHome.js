@@ -9,6 +9,9 @@ const ProfessionalHome = ({ navigation }) => {
   const handleViewAnalytics = () => {
     navigation.navigate('ProAnalytics'); // Navigue vers la page des analyses
   };
+  const handleHomeScreen = () => {
+    navigation.navigate('Home'); // Navigue vers la page des analyses
+  };
 
   return (
     <View style={styles.container}>
@@ -26,6 +29,12 @@ const ProfessionalHome = ({ navigation }) => {
         onPress={handleViewAnalytics}
       >
         <Text style={styles.buttonText}>View Analytics</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleHomeScreen}
+      >
+        <Text style={styles.buttonText}>Home</Text>
       </TouchableOpacity>
     </View>
   );
