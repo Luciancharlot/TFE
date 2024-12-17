@@ -119,7 +119,16 @@ const ProAnalytics = () => {
   };
 
   const renderItem = ({ item }) => {
-    const typeName = beerTypes[item.type_name]?.type_name || 'Unknown';
+    // Fonction pour récupérer les noms de type en cas de types multiples
+    const getTypeNames = (typeIds) => {
+      if (!typeIds) return 'Unknown';
+      const ids = typeIds.split(','); // Séparer les ID multiples
+      return ids
+        .map((id) => beerTypes[id]?.type_name || 'Unknown') // Mapper chaque type
+        .join(', '); // Joindre avec une virgule
+    };
+  
+    const typeName = getTypeNames(item.type_name); // Mettre à jour avec la nouvelle fonction
     const quantity = item.quantity || 0;
   
     return (

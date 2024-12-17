@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ref, onValue } from 'firebase/database';
@@ -18,10 +20,12 @@ const OrderScreen = () => {
   const { orderID } = route.params;
   const [beers, setBeers] = useState([]);
   const [beerTypes, setBeerTypes] = useState({});
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const windowWidth = Dimensions.get('window').width;
   const cardWidth = (windowWidth - 80) / 3;
-  const tableInfo = route.params?.tableInfo || { table_id: 'default'}; 
+  const tableInfo = route.params?.tableInfo || { table_id: 'default' };
 
   useEffect(() => {
     const beersRef = ref(database, 'beers');
@@ -55,26 +59,61 @@ const OrderScreen = () => {
     });
   }, [orderID]);
 
+  // Fonction pour extraire les noms des types d'une bière
   const getTypeNames = (typeIds) => {
-    if (!typeIds) return 'Surprise';
+    if (!typeIds) return 'Unknown';
     const ids = typeIds.split(',');
-    return ids.map((id) => beerTypes[id]?.type_name || 'Surprise').join(', ');
+    return ids.map((id) => beerTypes[id]?.type_name || 'Unknown').join(', ');
   };
+
+  // Toggle pour la sélection multiple des types
+  const toggleTypeSelection = (type) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  // Filtrage des bières par types et recherche
+  const getFilteredBeers = () => {
+    return beers.filter((beer) => {
+      // Assurer que beer.type_id existe, sinon retourner une chaîne vide
+      const beerTypeIds = beer.type_id ? beer.type_id.split(',') : [];
+      
+      // Assurer que les noms des types sont bien définis
+      const beerTypeNames = beerTypeIds
+        .map((id) => beerTypes[id]?.type_name || '')
+        .filter(Boolean); // Retirer les valeurs vides ou undefined
+  
+      // Vérifier si la recherche par nom correspond
+      const matchesSearch = beer.beer_name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+  
+      // Si aucun type n'est sélectionné, retourner les bières basées uniquement sur la recherche
+      if (selectedTypes.length === 0) return matchesSearch;
+  
+      // Vérifier si les types de la bière correspondent aux types sélectionnés
+      const matchesType = selectedTypes.some((type) => beerTypeNames.includes(type));
+  
+      return matchesSearch && matchesType;
+    });
+  };
+  
 
   const renderItem = ({ item }) => {
     const typeName = getTypeNames(item.type_id);
 
     return (
       <TouchableOpacity
-      style={[styles.card, { width: cardWidth }]}
-      onPress={() =>
-        navigation.navigate('BeerDetails', { 
-          beer: item, 
-          orderID, 
-          tableInfo // Passe tableInfo ici
-        })
-      }
-    >
+        style={[styles.card, { width: cardWidth }]}
+        onPress={() =>
+          navigation.navigate('BeerDetails', {
+            beer: item,
+            orderID,
+            tableInfo,
+          })
+        }
+      >
         <Image
           source={{ uri: item.image }}
           style={[styles.image, { width: cardWidth - 16, height: cardWidth - 125 }]}
@@ -82,10 +121,8 @@ const OrderScreen = () => {
         />
         <View style={styles.details}>
           <Text style={styles.name}>{item.beer_name}</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.info}>Type: {typeName}</Text>
-            <Text style={styles.info}>ABV: {item.abv}%</Text>
-          </View>
+          <Text style={styles.info}>Type: {typeName}</Text>
+          <Text style={styles.info}>ABV: {item.abv}%</Text>
           <Text style={styles.price}>
             <Text style={styles.priceValue}>{item.beer_price || 0}</Text> €
           </Text>
@@ -113,8 +150,41 @@ const OrderScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Barre de recherche */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search beers..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
+      {/* Section de tri par types */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
+        {Object.values(beerTypes).map((type) => (
+          <TouchableOpacity
+            key={type.type_name}
+            onPress={() => toggleTypeSelection(type.type_name)}
+            style={[
+              styles.typeButton,
+              selectedTypes.includes(type.type_name) && styles.typeButtonSelected,
+            ]}
+          >
+            <Text
+              style={[
+                styles.typeButtonText,
+                selectedTypes.includes(type.type_name) && styles.typeButtonTextSelected,
+              ]}
+            >
+              {type.type_name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Liste des bières */}
       <FlatList
-        data={beers}
+        data={getFilteredBeers()}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
@@ -123,6 +193,7 @@ const OrderScreen = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -149,7 +220,7 @@ const styles = StyleSheet.create({
     top: 0,
     backgroundColor: '#EC9D00',
     width: 50,
-    height: 50,
+    height: 45,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
@@ -179,7 +250,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   list: {
-    paddingBottom: 16,
+    paddingBottom: 15,
   },
   card: {
     flexDirection: 'column',
@@ -211,7 +282,6 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
     width: '100%',
     marginTop: 8,
@@ -234,6 +304,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginTop: 2,
+  },
+  typeScroll: {
+    marginVertical: 10,
+    paddingVertical: 16,
+  },
+  typeButton: {
+    height: 36,
+    marginHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 15,
+    borderRadius: 18,
+    backgroundColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeButtonSelected: {
+    backgroundColor: '#EC9D00',
+  },
+  typeButtonTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  typeButtonText: {
+    fontSize: 17,
+    color: '#555',
+  },
+  searchBar: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
 });
 

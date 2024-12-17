@@ -33,59 +33,67 @@ const HomeScreen = () => {
         const analyticsRef = ref(database, 'analytics');
         const beersRef = ref(database, 'beers');
         const typesRef = ref(database, 'beer_types');
-
+  
         const analyticsSnapshot = await get(analyticsRef);
         const typesSnapshot = await get(typesRef);
         const beersSnapshot = await get(beersRef);
-
+  
         const analyticsData = analyticsSnapshot.val();
         const typesData = typesSnapshot.val();
         const beersData = beersSnapshot.val();
-
+  
         if (analyticsData) {
           let beerQuantities = {};
           let typeQuantities = {};
-
+  
           // Parcours des bières et calcul des quantités
           Object.keys(analyticsData).forEach((beerName) => {
             const beerData = analyticsData[beerName];
             const quantity = beerData.quantity || 0;
-            const typeId = beerData.type_name;
-
+            const typeIds = beerData.type_name?.split(',') || []; // IDs des types multiples
+  
+            // Quantité par bière
             beerQuantities[beerName] = (beerQuantities[beerName] || 0) + quantity;
-
-            if (typeId) {
-              typeQuantities[typeId] = (typeQuantities[typeId] || 0) + quantity;
-            }
+  
+            // Quantité par type (traduire ID en nom)
+            typeIds.forEach((typeId) => {
+              const cleanTypeId = typeId.trim();
+              const typeName = typesData[cleanTypeId]?.type_name || 'Unknown';
+              if (typeName) {
+                typeQuantities[typeName] = (typeQuantities[typeName] || 0) + quantity;
+              }
+            });
           });
-
-          // Bière et Type les plus vendus
+  
+          // Bière la plus vendue
           const mostSoldBeer = Object.keys(beerQuantities).reduce((a, b) =>
             beerQuantities[a] > beerQuantities[b] ? a : b
           );
           setBeerOfTheMoment(mostSoldBeer);
-
-          const mostSoldTypeId = Object.keys(typeQuantities).reduce((a, b) =>
-            typeQuantities[a] > typeQuantities[b] ? a : b
-          );
-          setTypeOfTheMoment(typesData[mostSoldTypeId]?.type_name || 'Unknown');
-
+  
           // Récupérer l'image de la bière
           const beerDetails = Object.values(beersData).find(
             (beer) => beer.beer_name === mostSoldBeer
           );
           setBeerImage(beerDetails?.image || null);
+  
+          // Type(s) le(s) plus vendu(s) avec le nom
+          const mostSoldType = Object.keys(typeQuantities).reduce((a, b) =>
+            typeQuantities[a] > typeQuantities[b] ? a : b
+          );
+          setTypeOfTheMoment(mostSoldType);
         }
       } catch (error) {
         console.error('Error fetching analytics data:', error);
       }
     };
-
+  
     fetchAnalyticsData();
     const intervalId = setInterval(fetchAnalyticsData, 1800000);
-
+  
     return () => clearInterval(intervalId);
   }, []);
+  
 
   const handleNfcScan = async () => {
     try {
