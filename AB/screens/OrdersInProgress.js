@@ -23,10 +23,13 @@ const OrdersInProgress = () => {
         Object.keys(data).forEach((tableID) => {
           Object.keys(data[tableID]).forEach((orderID) => {
             const orderData = data[tableID][orderID];
-            if (orderData.status === 'ordered') {
+            if (orderData.status === 'ordered'|| orderData.status === 'paid') {
               fetchedOrders.push({
                 id: orderID,
                 tableID: tableID,
+                paymentMethod: orderData.payment_method || 'unknown',
+                status: orderData.status|| 'ordered',
+                timestamp: orderData.order_date || '',
                 items: Object.values(orderData).filter(
                   (item) => typeof item === 'object'
                 ),
@@ -34,6 +37,7 @@ const OrdersInProgress = () => {
             }
           });
         });
+        fetchedOrders.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       }
 
       setOrders(fetchedOrders);
@@ -44,47 +48,57 @@ const OrdersInProgress = () => {
 
   const handleValidate = async (order) => {
     try {
-      const analyticsRef = ref(database, 'analytics');
-
       for (const item of order.items) {
         const beerName = item.beer_name;
         const typeId = item.type_id || 'Unknown';
         const quantity = item.quantity || 0;
-
+  
         if (!beerName || quantity <= 0) continue;
-
+  
         const analyticsItemRef = ref(database, `analytics/${beerName}`);
         const snapshot = await get(analyticsItemRef);
-
-        const currentDate = new Date().toISOString();
-
-        let updatedData = {
-          quantity: quantity,
-          type_name: typeId,
-          dates: [currentDate],
-        };
-
+  
+        const currentDate = new Date().toISOString(); // Date actuelle
+  
+        let updatedData;
+  
         if (snapshot.exists()) {
           const existingData = snapshot.val();
-          updatedData.quantity = (existingData.quantity || 0) + quantity;
-          updatedData.dates = existingData.dates
-            ? [...existingData.dates, currentDate]
-            : [currentDate];
-          updatedData.type_name = existingData.type_name || typeId;
+  
+          // Ajout d'une nouvelle entrée avec la quantité associée à la date
+          updatedData = {
+            ...existingData,
+            dates: [
+              ...(existingData.dates || []),
+              { date: currentDate, quantity: quantity },
+            ],
+          };
+        } else {
+          // Nouvelle entrée si elle n'existe pas
+          updatedData = {
+            dates: [{ date: currentDate, quantity: quantity }],
+            type_name: typeId,
+          };
         }
-
+  
         await update(analyticsItemRef, updatedData);
       }
-
+  
+      // Mise à jour du statut et de la date de validation
       const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
-      await update(orderRef, { status: 'validated' });
-
+      await update(orderRef, {
+        status: 'validated',
+        validated_date: new Date().toISOString(),
+      });
+  
       Alert.alert('Success', `Order ${order.id} validated successfully.`);
     } catch (error) {
       console.error('Error validating order:', error.message);
       Alert.alert('Error', 'Failed to validate the order.');
     }
   };
+  
+  
 
   const handleRemove = (order) => {
     Alert.alert(
@@ -97,27 +111,59 @@ const OrdersInProgress = () => {
           style: 'destructive',
           onPress: () => {
             const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
-            remove(orderRef).then(() => {
-              Alert.alert('Success', `Order ${order.id} removed successfully.`);
-            });
+            remove(orderRef)
+              .then(() => {
+                // Mettre à jour l'état des commandes après suppression
+                setOrders((prevOrders) =>
+                  prevOrders.filter((o) => o.id !== order.id)
+                );
+              })
+              .catch((error) => {
+                console.error('Error removing order:', error);
+                Alert.alert('Error', 'Failed to remove the order.');
+              });
           },
         },
       ]
     );
   };
+  
 
   const renderOrder = ({ item }) => (
     <View style={styles.orderContainer}>
       <Text style={styles.orderTitle}>
-        Table: {item.tableID} | Order ID: {item.id}
+        Table: {item.tableID} 
       </Text>
       {item.items.map((beer, index) => (
         <View key={index} style={styles.itemContainer}>
           <Text>
-            {beer.beer_name} - {beer.quantity} pcs
+            <Text style={styles.beerName}>{beer.beer_name}</Text> {' '}
+            <Text style={styles.hyphen}>-</Text>{' '}
+            <Text style={styles.quantity}>{beer.quantity}</Text>{' '}
+            <Text style={styles.pcs}>pcs</Text>
           </Text>
         </View>
       ))}
+      <Text style={styles.paymentInfo}>
+        Payment Method: {item.paymentMethod === 'paypal'
+          ? '🅿️ PayPal'
+          : item.paymentMethod === 'bancontact'
+          ? '💳 Bancontact'
+          : item.paymentMethod === 'cash'
+          ? '💵 Cash'
+          : '❓ Unknown'}
+      </Text>
+      <Text
+        style={[
+          styles.paymentStatus,
+          { color: item.status === 'paid' ? 'green' : 'red' },
+        ]}
+      >
+        Status: {item.status === 'paid' ? 'Paid' : 'Not Paid'}
+      </Text>
+      <Text style={styles.timestamp}>
+        Ordered on: {new Date(item.timestamp).toLocaleString()} {/* Affichage lisible */}
+      </Text>
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={[styles.button, styles.validateButton]}
@@ -179,6 +225,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
+  paymentInfo: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  paymentStatus: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
   itemContainer: {
     marginBottom: 4,
   },
@@ -203,6 +260,24 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  beerName: {
+    fontWeight: 'bold',
+    fontSize: 25,
+    color: '#EC9D00',
+  },
+  quantity: {
+    fontSize: 25, 
+    fontWeight: 'bold', 
+  },
+  pcs: {
+    fontSize: 14, 
+    color: '#666',
+  },
+  hyphen: {
+    fontSize: 25, 
+    color: '#666',
+    fontWeight: 'bold', 
   },
 });
 

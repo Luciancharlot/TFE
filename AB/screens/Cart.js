@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   Alert,
+  Modal,
 } from 'react-native';
 import { database } from '../firebase';
 import { ref, onValue, update, remove } from 'firebase/database';
@@ -15,6 +16,8 @@ const Cart = ({ route, navigation }) => {
   const { orderID, tableInfo } = route.params; // Récupération de tableInfo et orderID
   const [cartItems, setCartItems] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState(null); // Moyen de paiement
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false); // État pour la simulation de paiement
 
   useEffect(() => {
     // Utilisation correcte de tableInfo.table_id
@@ -93,11 +96,19 @@ const Cart = ({ route, navigation }) => {
       .catch((error) => console.error('Error removing all items:', error));
   };
 
-  const handleOrder = () => {
+  const handlePayPalSimulation = () => {
+    setIsPaymentModalVisible(true);
+  };
+
+  const confirmPayment = () => {
+    setIsPaymentModalVisible(false);
     const orderRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
-    update(orderRef, { status: 'ordered' })
+    update(orderRef, { 
+      status: 'paid', 
+      payment_method: 'paypal',
+      order_date: new Date().toISOString(),})
       .then(() => {
-        console.log('Order status updated to "ordered"');
+        console.log('Order status updated to "paid"');
         Alert.alert(
           'Order Placed',
           'Your order has been placed successfully! Thank you for shopping with us.',
@@ -111,6 +122,40 @@ const Cart = ({ route, navigation }) => {
         );
       })
       .catch((error) => console.error('Error updating order status:', error));
+  };
+
+  const handleOrder = () => {
+    if (!paymentMethod) {
+      Alert.alert('Error', 'Please select a payment method before ordering.');
+      return;
+    }
+
+    if (paymentMethod === 'paypal') {
+      handlePayPalSimulation();
+    } else {
+      const orderRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
+      const timestamp = new Date().toISOString(); // Génère une date/heure actuelle au format ISO.
+      update(orderRef, { 
+        status: 'ordered',
+        payment_method: paymentMethod,
+        order_date: timestamp,
+       })
+        .then(() => {
+          console.log('Order status updated to "ordered"');
+          Alert.alert(
+            'Order Placed',
+            'Your order has been placed successfully! Thank you for shopping with us.',
+            [
+              {
+                text: 'Ok',
+                style: 'destructive',
+                onPress: () => navigation.navigate('Home'),
+              },
+            ]
+          );
+        })
+        .catch((error) => console.error('Error updating order status:', error));
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -146,6 +191,19 @@ const Cart = ({ route, navigation }) => {
     </View>
   );
 
+  const renderPaymentMethod = (method, label, imageUri) => (
+    <TouchableOpacity
+      style={[
+        styles.paymentOption,
+        paymentMethod === method && styles.paymentOptionSelected,
+      ]}
+      onPress={() => setPaymentMethod(method)}
+    >
+      <Image source={{ uri: imageUri }} style={styles.paymentIcon} />
+      <Text style={styles.paymentLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Cart</Text>
@@ -159,6 +217,28 @@ const Cart = ({ route, navigation }) => {
         <Text style={styles.subtotalText}>Subtotal:</Text>
         <Text style={styles.subtotalValue}>{subtotal} €</Text>
       </View>
+
+      <View style={styles.paymentContainer}>
+        <Text style={styles.paymentTitle}>Select Payment Method:</Text>
+        <View style={styles.paymentOptionsContainer}>
+          {renderPaymentMethod(
+            'paypal',
+            'PayPal',
+            'https://cdn-icons-png.flaticon.com/512/2504/2504802.png' // Remplacez par l'URL réelle
+          )}
+          {renderPaymentMethod(
+            'bancontact',
+            'Bancontact',
+            'https://e7.pngegg.com/pngimages/305/179/png-clipart-bancontact-mistercash-nv-payment-maestro-bank-payconiq-bank-text-logo-thumbnail.png' // Remplacez par l'URL réelle
+          )}
+          {renderPaymentMethod(
+            'cash',
+            'Cash',
+            'https://cdn-icons-png.freepik.com/512/8992/8992633.png' // Remplacez par l'URL réelle
+          )}
+        </View>
+      </View>
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -176,10 +256,35 @@ const Cart = ({ route, navigation }) => {
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={isPaymentModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsPaymentModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Simulated PayPal Payment</Text>
+            <Text style={styles.modalText}>Amount: {subtotal} €</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={confirmPayment}
+            >
+              <Text style={styles.modalButtonText}>Confirm Payment</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setIsPaymentModalVisible(false)}
+            >
+              <Text style={styles.modalCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -279,6 +384,39 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#EC9D00',
   },
+  paymentContainer: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  paymentTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  paymentOptionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  paymentOption: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  paymentOptionSelected: {
+    borderColor: '#EC9D00',
+  },
+  paymentIcon: {
+    width: 50,
+    height: 50,
+    marginBottom: 5,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -322,6 +460,53 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#EC9D00',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalCancelButton: {
+    backgroundColor: '#970003',
+    padding: 10,
+    borderRadius: 5,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

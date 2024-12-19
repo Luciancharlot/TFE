@@ -13,9 +13,14 @@ const ProAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [filter, setFilter] = useState('today');
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear()); // Année active
   const [beerTypes, setBeerTypes] = useState({});
 
+
   useEffect(() => {
+    if (filter === 'year') {
+      applyFilter('year', analyticsData); // Refiltrer les données lorsque l'année change
+    }
     // Fetch beer types
     const typesRef = ref(database, 'beer_types');
     const unsubscribeTypes = onValue(typesRef, (snapshot) => {
@@ -44,41 +49,95 @@ const ProAnalytics = () => {
       unsubscribeTypes();
       unsubscribeAnalytics();
     };
-  }, []);
+  }, [currentYear, filter, analyticsData]);
 
   const applyFilter = (selectedFilter, data = analyticsData) => {
     const now = new Date();
     let filtered = [];
-
+  
     switch (selectedFilter) {
       case 'today':
-        filtered = data.filter((item) =>
-          item.dates?.some((date) => isSameDay(new Date(date), now))
-        );
+        filtered = data.map((item) => {
+          let total = 0;
+          if (item.dates) {
+            item.dates.forEach((entry) => {
+              if (isSameDay(new Date(entry.date), now)) {
+                total += entry.quantity; // Ajouter uniquement les quantités de la date d'aujourd'hui
+              }
+            });
+          }
+          return { ...item, total };
+        });
         break;
+  
       case 'week':
-        filtered = data.filter((item) =>
-          item.dates?.some((date) => isSameWeek(new Date(date), now))
-        );
+        filtered = data.map((item) => {
+          let total = 0;
+          if (item.dates) {
+            item.dates.forEach((entry) => {
+              if (isSameWeek(new Date(entry.date), now)) {
+                total += entry.quantity; // Ajouter uniquement les quantités de la semaine
+              }
+            });
+          }
+          return { ...item, total };
+        });
         break;
+  
+      case 'month':
+        filtered = data.map((item) => {
+          let total = 0;
+          if (item.dates) {
+            item.dates.forEach((entry) => {
+              if (isSameMonth(new Date(entry.date), now)) {
+                total += entry.quantity; // Ajouter uniquement les quantités du mois
+              }
+            });
+          }
+          return { ...item, total };
+        });
+        break;
+      
       case 'quarter':
-        filtered = data.filter((item) =>
-          item.dates?.some((date) => isSameQuarter(new Date(date), now))
-        );
+        filtered = data.map((item) => {
+          let total = 0;
+          if (item.dates) {
+            item.dates.forEach((entry) => {
+              if (isSameQuarter(new Date(entry.date), now)) {
+                total += entry.quantity; // Ajouter uniquement les quantités du trimestre
+              }
+            });
+          }
+          return { ...item, total };
+        });
         break;
-      case 'year':
-        filtered = data.filter((item) =>
-          item.dates?.some((date) => isSameYear(new Date(date), now))
-        );
-        break;
-      default:
-        filtered = data;
+  
+        case 'year':
+  filtered = data.map((item) => {
+    let total = 0;
+    if (item.dates) {
+      item.dates.forEach((entry) => {
+        const entryYear = new Date(entry.date).getFullYear();
+        if (entryYear === currentYear) { // Vérifie uniquement les dates de l'année sélectionnée
+          total += entry.quantity; // Ajoute uniquement les quantités de cette année
+        }
+      });
     }
-
-    filtered.sort((a, b) => b.quantity - a.quantity); // Trier par quantité décroissante
+    return { ...item, total }; // Retourne l'objet avec le total mis à jour
+  });
+  break;
+  
+      default:
+        filtered = data.map((item) => {
+          return { ...item, total: item.quantity };
+        });
+    }
+  
+    filtered = filtered.filter((item) => item.total > 0); // Filtrer les bières sans total
+    filtered.sort((a, b) => b.total - a.total); // Trier par quantité décroissante
     setFilteredData(filtered);
   };
-
+  
   const isSameDay = (date1, date2) => {
     return (
       date1.getFullYear() === date2.getFullYear() &&
@@ -86,22 +145,24 @@ const ProAnalytics = () => {
       date1.getDate() === date2.getDate()
     );
   };
+  
 
   const isSameWeek = (date1, date2) => {
-    const startOfWeek = new Date(
-      date2.setDate(date2.getDate() - (date2.getDay() || 7) + 1) // Commence le lundi
-    );
+    const startOfWeek = new Date(date2);
+    startOfWeek.setDate(date2.getDate() - date2.getDay() + 1); // Lundi
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 6);
-
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+  
     return date1 >= startOfWeek && date1 <= endOfWeek;
   };
+  
 
   const isSameMonth = (date1, date2) => {
     return (
       date1.getFullYear() === date2.getFullYear() && date1.getMonth() === date2.getMonth()
     );
   };
+  
 
   const isSameQuarter = (date1, date2) => {
     const quarter1 = Math.floor(date1.getMonth() / 3);
@@ -112,11 +173,58 @@ const ProAnalytics = () => {
   const isSameYear = (date1, date2) => {
     return date1.getFullYear() === date2.getFullYear();
   };
+  
 
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
-    applyFilter(newFilter);
+    if (newFilter !== 'year') {
+      applyFilter(newFilter);
+    } else {
+      applyFilter(newFilter, analyticsData);
+    }
   };
+
+  const handlePreviousYear = () => {
+    setCurrentYear((prevYear) => {
+      const newYear = prevYear - 1;
+      applyFilter('year', analyticsData); // Appliquer le filtre pour la nouvelle année
+      return newYear;
+    });
+  };
+  
+  const handleNextYear = () => {
+    setCurrentYear((prevYear) => {
+      if (prevYear < new Date().getFullYear()) {
+        const newYear = prevYear + 1;
+        applyFilter('year', analyticsData); // Appliquer le filtre pour la nouvelle année
+        return newYear;
+      }
+      return prevYear; // Ne pas dépasser l'année en cours
+    });
+  };
+  
+  const handleYearChange = (newYear) => {
+    setCurrentYear(newYear);
+    applyFilter('year', analyticsData); // Refiltre les données pour l'année spécifiée
+  };
+
+  const renderYearNavigation = () => (
+    <View style={styles.yearNavigationContainer}>
+      <TouchableOpacity style={styles.yearButton} onPress={handlePreviousYear}>
+        <Text style={styles.yearButtonText}>←</Text>
+      </TouchableOpacity>
+      <Text style={styles.yearLabel}>
+        {currentYear === new Date().getFullYear() ? `This Year (${currentYear})` : currentYear}
+      </Text>
+      <TouchableOpacity
+        style={[styles.yearButton, currentYear === new Date().getFullYear() && styles.disabledButton]}
+        onPress={handleNextYear}
+        disabled={currentYear === new Date().getFullYear()}
+      >
+        <Text style={styles.yearButtonText}>→</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderItem = ({ item }) => {
     // Fonction pour récupérer les noms de type en cas de types multiples
@@ -135,7 +243,7 @@ const ProAnalytics = () => {
       <View style={styles.itemContainer}>
         <Text style={styles.itemName}>{item.beer_name}</Text>
         <Text style={styles.itemDetails}>Type: {typeName}</Text>
-        <Text style={styles.itemDetails}>Quantity Sold: {quantity}</Text>
+        <Text style={styles.itemDetails}>Quantity Sold: {item.total}</Text>
       </View>
     );
   };
@@ -177,6 +285,9 @@ const ProAnalytics = () => {
           <Text style={styles.filterButtonText}>This Year</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Year Navigation */}
+      {filter === 'year' && renderYearNavigation()}
 
       {/* List of Analytics */}
       <FlatList
@@ -241,6 +352,31 @@ const styles = StyleSheet.create({
   itemDetails: {
     fontSize: 14,
     color: '#555',
+  },
+  yearNavigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  yearButton: {
+    backgroundColor: '#EC9D00',
+    padding: 10,
+    borderRadius: 5,
+    marginHorizontal: 10,
+  },
+  yearButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#ddd',
+  },
+  yearLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
 

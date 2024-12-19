@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "foregroundImage": "./assets/Drink-Beer.png"
       },
       "package": "com.el_coabite.AB"
     },
