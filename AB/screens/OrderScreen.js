@@ -28,6 +28,7 @@ const OrderScreen = () => {
   const tableInfo = route.params?.tableInfo || { table_id: 'default' };
 
   useEffect(() => {
+    // Charger les bières et types depuis Firebase
     const beersRef = ref(database, 'beers');
     onValue(beersRef, (snapshot) => {
       const data = snapshot.val();
@@ -37,13 +38,14 @@ const OrderScreen = () => {
       }));
       setBeers(beersList);
     });
-
+  
     const typesRef = ref(database, 'beer_types');
     onValue(typesRef, (snapshot) => {
       const data = snapshot.val();
       setBeerTypes(data);
     });
-
+  
+    // Charger les commandes actuelles pour mettre à jour le compteur du panier
     const ordersRef = ref(database, `orders/${tableInfo.table_id}/${orderID}`);
     onValue(ordersRef, (snapshot) => {
       const data = snapshot.val();
@@ -57,7 +59,16 @@ const OrderScreen = () => {
         setCartCount(0);
       }
     });
-  }, [orderID]);
+  
+    // Appliquer le filtre si un type est passé via les paramètres
+    if (route.params?.filterType) {
+      setSelectedTypes([route.params.filterType]);
+    }
+
+    if (route.params?.searchQuery) {
+      setSearchQuery(route.params.searchQuery);
+    }
+  }, [orderID, route.params?.filterType, route.params?.searchQuery]);
 
   // Fonction pour extraire les noms des types d'une bière
   const getTypeNames = (typeIds) => {

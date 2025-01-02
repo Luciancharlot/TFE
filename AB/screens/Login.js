@@ -15,7 +15,6 @@ const Login = ({ navigation }) => {
   const handleLogin = () => {
     // Remplacez ceci par une logique réelle d'authentification
     if (email === 'ok' && password === 'ok') {
-      Alert.alert('Login Successful', 'Welcome back!');
       navigation.navigate('ProfessionalHome'); // Retourne à la page précédente après connexion réussie
     } else {
       Alert.alert('Login Failed', 'Invalid email or password');

@@ -213,6 +213,9 @@ const Cart = ({ route, navigation }) => {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
       />
+      <TouchableOpacity style={styles.removeAllButton} onPress={handleRemoveAll}>
+        <Text style={styles.removeAllText}>Remove All</Text>
+      </TouchableOpacity>
       <View style={styles.subtotalContainer}>
         <Text style={styles.subtotalText}>Subtotal:</Text>
         <Text style={styles.subtotalValue}>{subtotal} €</Text>
@@ -240,12 +243,8 @@ const Cart = ({ route, navigation }) => {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleRemoveAll}
-        >
-          <Text style={styles.actionButtonText}>Remove All</Text>
-        </TouchableOpacity>
+
+
         <TouchableOpacity style={styles.orderButton} onPress={handleOrder}>
           <Text style={styles.orderButtonText}>Order</Text>
         </TouchableOpacity>
@@ -508,6 +507,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  removeAllButton: {
+    position: 'absolute',
+    top: 20, 
+    right: 20, 
+    borderWidth: 1,
+    borderColor: '#f6f6f6',
+    borderRadius: 5,
+    padding: 8,
+  },
+  removeAllText: {
+    color: '#970003', // Texte en blanc
+    fontSize: 14,
+    fontWeight: 'bold',
+  },  
+  
 });
 
 export default Cart;

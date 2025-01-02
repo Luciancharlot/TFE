@@ -35,6 +35,8 @@ const BeerDetails = ({ route, navigation }) => {
     <View style={styles.container}>
       <Image source={{ uri: beer.image }} style={styles.image} resizeMode="contain" />
       <Text style={styles.name}>{beer.beer_name}</Text>
+      <Text style={styles.info}>{beer.beer_description}</Text>
+      <Text style={styles.info}>{beer.brewery_name}</Text>
       <Text style={styles.info}>ABV: {beer.abv}%</Text>
       <Text style={styles.info}>Price: {beer.beer_price || 0} €</Text>
 

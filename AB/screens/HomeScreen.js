@@ -65,16 +65,20 @@ const HomeScreen = () => {
             });
           });
   
-          // Bière la plus vendue
-          const mostSoldBeer = Object.keys(beerQuantities).reduce((a, b) =>
-            beerQuantities[a] > beerQuantities[b] ? a : b
+          const maxQuantity = Math.max(...Object.values(beerQuantities));
+
+      // Récupérer toutes les bières ayant la quantité maximale
+          const mostSoldBeers = Object.keys(beerQuantities).filter(
+            (beerName) => beerQuantities[beerName] === maxQuantity
           );
-          setBeerOfTheMoment(mostSoldBeer);
-  
-          // Récupérer l'image de la bière
-          const beerDetails = Object.values(beersData).find(
-            (beer) => beer.beer_name === mostSoldBeer
-          );
+
+          // Récupérer les détails des bières
+          const beerDetails = mostSoldBeers.map((beerName) => ({
+            name: beerName,
+            image: Object.values(beersData).find((beer) => beer.beer_name === beerName)?.image || null,
+          }));
+
+          setBeerOfTheMoment(beerDetails);
           setBeerImage(beerDetails?.image || null);
   
           // Type(s) le(s) plus vendu(s) avec le nom
@@ -93,7 +97,6 @@ const HomeScreen = () => {
   
     return () => clearInterval(intervalId);
   }, []);
-  
 
   const handleNfcScan = async () => {
     try {
@@ -139,6 +142,48 @@ const HomeScreen = () => {
     } else {
       Alert.alert('Error', 'Please enter a valid table number.');
     }
+  };
+
+  const handleTypeOfTheMoment = () => {
+    if (!tableInfo.table_id) {
+      Alert.alert(
+        'Error',
+        'Please scan the table NFC tag first!',
+        [
+          { text: "I don't have NFC", onPress: () => setManualModalVisible(true) },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+        { cancelable: true }
+      );
+      return;
+    }
+  
+    // Redirige vers OrderScreen avec le filtre du type du moment appliqué
+    navigation.navigate('Order', {
+      tableInfo,
+      filterType: typeOfTheMoment, // Passe le type du moment comme filtre
+    });
+  };
+
+  const handleBeerOfTheMomentClick = (beer) => {
+    if (!tableInfo.table_id) {
+      Alert.alert(
+        'Error',
+        'Please scan the table NFC tag first!',
+        [
+          { text: "I don't have NFC", onPress: () => setManualModalVisible(true) },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+        { cancelable: true }
+      );
+      return;
+    }
+  
+    // Redirige vers OrderScreen avec le nom de la bière dans la barre de recherche
+    navigation.navigate('Order', {
+      tableInfo,
+      searchQuery: beer.name, // Passe le nom de la bière comme recherche
+    });
   };
 
   const createOrder = async (tableId) => {
@@ -201,21 +246,30 @@ const HomeScreen = () => {
         </View>
       </Modal>
 
-      {/* Beer of the Moment */}
-      {beerOfTheMoment && (
+      {beerOfTheMoment && beerOfTheMoment.length > 0 && (
         <View style={styles.momentContainer}>
           <Text style={styles.momentTitle}>🍺 Beer of the Moment</Text>
-          {beerImage && <Image source={{ uri: beerImage }} style={styles.beerImage} />}
-          <Text style={styles.momentHighlight}>{beerOfTheMoment}</Text>
+          <View style={styles.beerMomentRow}>
+            {beerOfTheMoment.map((beer, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.beerMomentItem}
+                onPress={() => handleBeerOfTheMomentClick(beer)}
+              >
+                {beer.image && <Image source={{ uri: beer.image }} style={styles.beerImage} />}
+                <Text style={styles.momentHighlight}>{beer.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       )}
 
       {/* Type of the Moment */}
       {typeOfTheMoment && (
-        <View style={styles.momentContainer}>
+        <TouchableOpacity style={styles.momentContainer} onPress={handleTypeOfTheMoment}>
           <Text style={styles.momentTitle}>🌟 Type of the Moment</Text>
           <Text style={styles.momentHighlight}>{typeOfTheMoment}</Text>
-        </View>
+        </TouchableOpacity>
       )}
 
       {/* Chatbot Button */}
@@ -264,6 +318,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginTop: 8,
+  },
+  beerMomentRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap', // Permet d'aller à la ligne si trop de bières
+  },
+  beerMomentItem: {
+    alignItems: 'center',
+    marginHorizontal: 10, // Espacement horizontal entre les bières
+    marginBottom: 10, // Espacement si elles doivent passer à la ligne
   },
   beerImage: {
     width: 120,
@@ -361,6 +425,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+
 });
 
 export default HomeScreen;

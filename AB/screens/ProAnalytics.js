@@ -15,7 +15,7 @@ const ProAnalytics = () => {
   const [filter, setFilter] = useState('today');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear()); // Année active
   const [beerTypes, setBeerTypes] = useState({});
-
+  const [totalRevenue, setTotalRevenue] = useState(0);
 
   useEffect(() => {
     if (filter === 'year') {
@@ -54,89 +54,41 @@ const ProAnalytics = () => {
   const applyFilter = (selectedFilter, data = analyticsData) => {
     const now = new Date();
     let filtered = [];
-  
-    switch (selectedFilter) {
-      case 'today':
-        filtered = data.map((item) => {
-          let total = 0;
-          if (item.dates) {
+
+    filtered = data.map((item) => {
+        let total = 0;
+        let totalRevenue = 0; // Calcul du gain total
+        let currentPrice = 0; // Affichage du prix actuel
+
+        if (item.dates) {
             item.dates.forEach((entry) => {
-              if (isSameDay(new Date(entry.date), now)) {
-                total += entry.quantity; // Ajouter uniquement les quantités de la date d'aujourd'hui
-              }
+                const entryDate = new Date(entry.date);
+
+                // Vérifier si la date correspond au filtre
+                const isInFilter =
+                    selectedFilter === 'today' ? isSameDay(entryDate, now) :
+                    selectedFilter === 'week' ? isSameWeek(entryDate, now) :
+                    selectedFilter === 'month' ? isSameMonth(entryDate, now) :
+                    selectedFilter === 'quarter' ? isSameQuarter(entryDate, now) :
+                    selectedFilter === 'year' ? entryDate.getFullYear() === currentYear :
+                    false;
+
+                if (isInFilter) {
+                    total += entry.quantity;
+                    totalRevenue += entry.quantity * entry.price;
+                    currentPrice = entry.price; // Utilise le prix de la dernière entrée
+                }
             });
-          }
-          return { ...item, total };
-        });
-        break;
-  
-      case 'week':
-        filtered = data.map((item) => {
-          let total = 0;
-          if (item.dates) {
-            item.dates.forEach((entry) => {
-              if (isSameWeek(new Date(entry.date), now)) {
-                total += entry.quantity; // Ajouter uniquement les quantités de la semaine
-              }
-            });
-          }
-          return { ...item, total };
-        });
-        break;
-  
-      case 'month':
-        filtered = data.map((item) => {
-          let total = 0;
-          if (item.dates) {
-            item.dates.forEach((entry) => {
-              if (isSameMonth(new Date(entry.date), now)) {
-                total += entry.quantity; // Ajouter uniquement les quantités du mois
-              }
-            });
-          }
-          return { ...item, total };
-        });
-        break;
-      
-      case 'quarter':
-        filtered = data.map((item) => {
-          let total = 0;
-          if (item.dates) {
-            item.dates.forEach((entry) => {
-              if (isSameQuarter(new Date(entry.date), now)) {
-                total += entry.quantity; // Ajouter uniquement les quantités du trimestre
-              }
-            });
-          }
-          return { ...item, total };
-        });
-        break;
-  
-        case 'year':
-  filtered = data.map((item) => {
-    let total = 0;
-    if (item.dates) {
-      item.dates.forEach((entry) => {
-        const entryYear = new Date(entry.date).getFullYear();
-        if (entryYear === currentYear) { // Vérifie uniquement les dates de l'année sélectionnée
-          total += entry.quantity; // Ajoute uniquement les quantités de cette année
         }
-      });
-    }
-    return { ...item, total }; // Retourne l'objet avec le total mis à jour
-  });
-  break;
-  
-      default:
-        filtered = data.map((item) => {
-          return { ...item, total: item.quantity };
-        });
-    }
-  
+
+        return { ...item, total, totalRevenue, currentPrice }; // Ajout des données calculées
+    });
+
     filtered = filtered.filter((item) => item.total > 0); // Filtrer les bières sans total
     filtered.sort((a, b) => b.total - a.total); // Trier par quantité décroissante
     setFilteredData(filtered);
-  };
+};
+
   
   const isSameDay = (date1, date2) => {
     return (
@@ -225,8 +177,16 @@ const ProAnalytics = () => {
       </TouchableOpacity>
     </View>
   );
+  const calculateTotalRevenue = () => {
+    return filteredData.reduce((sum, item) => sum + (item.totalRevenue|| 0), 0);
+  };
+  
 
   const renderItem = ({ item }) => {
+    // Définit des valeurs par défaut pour éviter les erreurs
+    const currentPrice = item.currentPrice || 0; // Si le prix actuel n'est pas défini, utilise 0
+    const totalRevenue = item.totalRevenue || 0; // Si le gain total n'est pas défini, utilise 0
+    const totalQuantity = item.total || 0; // Renomme `quantity` en `totalQuantity` pour éviter les conflits
     // Fonction pour récupérer les noms de type en cas de types multiples
     const getTypeNames = (typeIds) => {
       if (!typeIds) return 'Unknown';
@@ -241,17 +201,19 @@ const ProAnalytics = () => {
   
     return (
       <View style={styles.itemContainer}>
-        <Text style={styles.itemName}>{item.beer_name}</Text>
-        <Text style={styles.itemDetails}>Type: {typeName}</Text>
-        <Text style={styles.itemDetails}>Quantity Sold: {item.total}</Text>
+          <Text style={styles.itemName}>{item.beer_name}</Text>
+          <Text style={styles.itemDetails}>Type: {typeName}</Text>
+          <Text style={styles.itemDetails}>Quantity Sold: {totalQuantity}</Text>
+          <Text style={styles.itemDetails}>Current Price: {currentPrice.toFixed(2)} €</Text>
+          <Text style={styles.itemDetails}>Total Revenue: {totalRevenue.toFixed(2)} €</Text>
       </View>
-    );
+  );
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Analytics</Text>
-
+  
       {/* Filters */}
       <View style={styles.filtersContainer}>
         <TouchableOpacity
@@ -285,9 +247,16 @@ const ProAnalytics = () => {
           <Text style={styles.filterButtonText}>This Year</Text>
         </TouchableOpacity>
       </View>
-
+  
       {/* Year Navigation */}
       {filter === 'year' && renderYearNavigation()}
+  
+      {/* Total Revenue */}
+      <View style={styles.totalRevenueContainer}>
+        <Text style={styles.totalRevenueText}>
+          Total Revenue: {calculateTotalRevenue().toFixed(2)} €
+        </Text>
+      </View>
 
       {/* List of Analytics */}
       <FlatList
@@ -377,6 +346,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+  },
+  totalRevenueContainer: {
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  totalRevenueText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#28a745',
+    textAlign: 'center',
   },
 });
 
