@@ -13,6 +13,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase';
+import BackButton from '../components/BackButton';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const OrderScreen = () => {
   const navigation = useNavigation();
@@ -144,6 +146,7 @@ const OrderScreen = () => {
 
   return (
     <View style={styles.container}>
+      <BackButton />
       <View style={styles.header}>
         <Text style={styles.title}>Our Beers</Text>
         <TouchableOpacity
@@ -163,12 +166,22 @@ const OrderScreen = () => {
       </View>
 
       {/* Barre de recherche */}
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search beers..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search beers..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => setSearchQuery('')}
+          >
+            <Icon name="close" size={20} color="#555" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Section de tri par types */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
@@ -341,15 +354,29 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#555',
   },
+  searchContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   searchBar: {
+    flex: 1,
     backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginBottom: 10,
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#ddd',
+  },
+  clearButton: {
+    position: 'absolute',
+    right: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 30,
+    height: 30,
   },
 });
 

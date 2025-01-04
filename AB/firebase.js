@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
+import { getAuth } from 'firebase/auth'; // Importer le module d'authentification
 
 const firebaseConfig = {
   apiKey: "AIzaSyD8tHB2HoqcgQbSThoa4SAqCOHGvrhP6u0",
@@ -21,7 +22,8 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-// Exportez la base de données
+// Initialiser la base de données et l'authentification
 const database = getDatabase(app);
+const auth = getAuth(app); // Initialiser Auth
 
-export { database };
+export { database, auth };

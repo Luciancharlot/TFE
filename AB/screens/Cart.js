@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { database } from '../firebase';
 import { ref, onValue, update, remove } from 'firebase/database';
+import BackButton from '../components/BackButton';
 
 const Cart = ({ route, navigation }) => {
   const { orderID, tableInfo } = route.params; // Récupération de tableInfo et orderID
@@ -109,17 +110,7 @@ const Cart = ({ route, navigation }) => {
       order_date: new Date().toISOString(),})
       .then(() => {
         console.log('Order status updated to "paid"');
-        Alert.alert(
-          'Order Placed',
-          'Your order has been placed successfully! Thank you for shopping with us.',
-          [
-            {
-              text: 'Ok',
-              style: 'destructive',
-              onPress: () => navigation.navigate('Home'),
-            },
-          ]
-        );
+        navigation.navigate('Home')
       })
       .catch((error) => console.error('Error updating order status:', error));
   };
@@ -142,17 +133,7 @@ const Cart = ({ route, navigation }) => {
        })
         .then(() => {
           console.log('Order status updated to "ordered"');
-          Alert.alert(
-            'Order Placed',
-            'Your order has been placed successfully! Thank you for shopping with us.',
-            [
-              {
-                text: 'Ok',
-                style: 'destructive',
-                onPress: () => navigation.navigate('Home'),
-              },
-            ]
-          );
+          navigation.navigate('Home')
         })
         .catch((error) => console.error('Error updating order status:', error));
     }
@@ -206,6 +187,7 @@ const Cart = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <BackButton />
       <Text style={styles.title}>Cart</Text>
       <FlatList
         data={cartItems}

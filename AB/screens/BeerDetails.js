@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { ref, runTransaction } from 'firebase/database';
 import { database } from '../firebase';
+import BackButton from '../components/BackButton';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window'); // Dimensions de l'écran
 
@@ -31,8 +33,10 @@ const BeerDetails = ({ route, navigation }) => {
   const handleIncrease = () => setQuantity((prev) => prev + 1);
   const handleDecrease = () => setQuantity((prev) => Math.max(1, prev - 1));
 
+
   return (
     <View style={styles.container}>
+      <BackButton />
       <Image source={{ uri: beer.image }} style={styles.image} resizeMode="contain" />
       <Text style={styles.name}>{beer.beer_name}</Text>
       <Text style={styles.info}>{beer.beer_description}</Text>
@@ -119,6 +123,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  
 });
 
 export default BeerDetails;

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { database } from '../firebase';
 import { ref, onValue } from 'firebase/database';
+import BackButton from '../components/BackButton';
 
 const ProAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState([]);
@@ -100,12 +101,17 @@ const ProAnalytics = () => {
   
 
   const isSameWeek = (date1, date2) => {
+    // Calcule le lundi de la semaine pour la date donnée
     const startOfWeek = new Date(date2);
-    startOfWeek.setDate(date2.getDate() - date2.getDay() + 1); // Lundi
+    startOfWeek.setDate(date2.getDate() - ((date2.getDay() + 6) % 7)); // Lundi de la semaine
+  
+    // Calcule le dimanche de la semaine pour la date donnée
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
   
+    // Vérifie si la date est dans l'intervalle
     return date1 >= startOfWeek && date1 <= endOfWeek;
+
   };
   
 
@@ -153,11 +159,6 @@ const ProAnalytics = () => {
       }
       return prevYear; // Ne pas dépasser l'année en cours
     });
-  };
-  
-  const handleYearChange = (newYear) => {
-    setCurrentYear(newYear);
-    applyFilter('year', analyticsData); // Refiltre les données pour l'année spécifiée
   };
 
   const renderYearNavigation = () => (
@@ -212,6 +213,7 @@ const ProAnalytics = () => {
 
   return (
     <View style={styles.container}>
+      <BackButton />
       <Text style={styles.title}>Analytics</Text>
   
       {/* Filters */}

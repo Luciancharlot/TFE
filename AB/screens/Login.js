@@ -7,22 +7,42 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import { auth } from '../firebase'; // Importez l'authentification configurée
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import BackButton from '../components/BackButton';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Ajoutez cette dépendance
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secureTextEntry, setSecureTextEntry] = useState(true); // État pour afficher ou masquer le mot de passe
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Remplacez ceci par une logique réelle d'authentification
-    if (email === 'ok' && password === 'ok') {
-      navigation.navigate('ProfessionalHome'); // Retourne à la page précédente après connexion réussie
-    } else {
-      Alert.alert('Login Failed', 'Invalid email or password');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigation.replace('ProfessionalHome'); // Redirige vers la page ProfessionalHome après connexion réussie
+    } catch (error) {
+      setLoading(false);
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert('Login Failed', 'No user found with this email');
+      } else if (error.code === 'auth/wrong-password') {
+        Alert.alert('Login Failed', 'Incorrect password');
+      } else {
+        Alert.alert('Login Failed', error.message);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
+      <BackButton />
       <Text style={styles.title}>Professional Login</Text>
 
       <TextInput
@@ -35,18 +55,36 @@ const Login = ({ navigation }) => {
         placeholderTextColor="#999"
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        autoCapitalize="none"
-        secureTextEntry
-        placeholderTextColor="#999"
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          autoCapitalize="none"
+          secureTextEntry={secureTextEntry}
+          placeholderTextColor="#999"
+        />
+        <TouchableOpacity
+          onPress={() => setSecureTextEntry(!secureTextEntry)}
+          style={styles.eyeButton}
+        >
+          <Icon
+            name={secureTextEntry ? 'visibility-off' : 'visibility'}
+            size={20}
+            color="#555"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Login</Text>
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.loginButtonText}>
+          {loading ? 'Logging in...' : 'Login'}
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -82,6 +120,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: '#fff',
     color: '#333',
+  },
+  passwordContainer: {
+    width: '80%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginBottom: 20,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 15,
+    color: '#333',
+  },
+  eyeButton: {
+    padding: 10,
   },
   loginButton: {
     width: '80%',

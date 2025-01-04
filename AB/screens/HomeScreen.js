@@ -110,7 +110,6 @@ const HomeScreen = () => {
 
         if (tableData.table_id) {
           setTableInfo({ table_id: tableData.table_id });
-          Alert.alert('Table Found', `Table: ${tableData.table_id}`);
         }
       }
     } catch (ex) {
@@ -119,6 +118,7 @@ const HomeScreen = () => {
       NfcManager.cancelTechnologyRequest();
     }
   };
+
   const handleStartOrder = () => {
     if (!tableInfo.table_id) {
       Alert.alert(
@@ -132,15 +132,22 @@ const HomeScreen = () => {
       );
       return;
     }
-    createOrder(tableInfo.table_id);
+    createOrder(tableInfo.table_id, 'orderBeer');
   };
+
+  const isValidTableId = (input) => {
+    // Vérifie si l'entrée est un entier positif ou zéro
+    const parsedNumber = parseInt(input, 10);
+    return !isNaN(parsedNumber) && parsedNumber >= 0 && input === parsedNumber.toString();
+  };
+  
   const handleManualSubmit = () => {
-    if (manualTableId.trim()) {
+    if (isValidTableId(manualTableId)) {
       setTableInfo({ table_id: manualTableId });
       setManualModalVisible(false);
-      createOrder(manualTableId);
+      createOrder(manualTableId, 'orderBeer');
     } else {
-      Alert.alert('Error', 'Please enter a valid table number.');
+      Alert.alert('Error', 'Please enter a valid table number (integer >= 0).');
     }
   };
 
@@ -158,11 +165,7 @@ const HomeScreen = () => {
       return;
     }
   
-    // Redirige vers OrderScreen avec le filtre du type du moment appliqué
-    navigation.navigate('Order', {
-      tableInfo,
-      filterType: typeOfTheMoment, // Passe le type du moment comme filtre
-    });
+    createOrder(tableInfo.table_id, 'typeOfTheMoment', { filterType: typeOfTheMoment });
   };
 
   const handleBeerOfTheMomentClick = (beer) => {
@@ -179,34 +182,47 @@ const HomeScreen = () => {
       return;
     }
   
-    // Redirige vers OrderScreen avec le nom de la bière dans la barre de recherche
-    navigation.navigate('Order', {
-      tableInfo,
-      searchQuery: beer.name, // Passe le nom de la bière comme recherche
+    createOrder(tableInfo.table_id, 'beerOfTheMoment', { searchQuery: beer.name });
+  };
+
+const createOrder = async (tableId, actionType, options = {}) => {
+  try {
+    const newOrderRef = push(ref(database, `orders/${tableId}`));
+    const orderID = newOrderRef.key;
+
+    await update(ref(database, `orders/${tableId}/${orderID}`), {
+      initialized: true,
     });
-  };
 
-  const createOrder = async (tableId) => {
-    try {
-      const newOrderRef = push(ref(database, `orders/${tableId}`));
-      const orderID = newOrderRef.key;
-
-      await update(ref(database, `orders/${tableId}/${orderID}`), {
-        initialized: true,
-      });
-
+    // Distinction selon le type d'action
+    if (actionType === 'orderBeer') {
       navigation.navigate('Order', { orderID, tableInfo: { table_id: tableId } });
-    } catch (error) {
-      console.error('Error creating order:', error);
+    } else if (actionType === 'beerOfTheMoment') {
+      navigation.navigate('Order', {
+        orderID, // Ajoute l'orderID ici
+        tableInfo: { table_id: tableId },
+        searchQuery: options.searchQuery, // Passe le nom de la bière comme recherche
+      });
+    } else if (actionType === 'typeOfTheMoment') {
+      navigation.navigate('Order', {
+        orderID, // Ajoute l'orderID ici
+        tableInfo: { table_id: tableId },
+        filterType: options.filterType, // Passe le type du moment comme filtre
+      });
     }
-  };
+  } catch (error) {
+    console.error('Error creating order:', error);
+  }
+};
+
+
   const openChatbot = () => navigation.navigate('Chatbot');
   const handleLogin = () => navigation.navigate('Login');
 
   return (
     <View style={styles.container}>
       <StatusBar hidden={false} barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <Text style={styles.title}>Welcome to your beer recommender</Text>
+      {/*<Text style={styles.title}>Welcome to your beer recommender</Text>*/}
 
       {/* NFC Scan */}
       <TouchableOpacity style={styles.button} onPress={handleNfcScan}>
@@ -231,7 +247,13 @@ const HomeScreen = () => {
               style={styles.alertInput}
               placeholder="Table Number"
               keyboardType="numeric"
-              onChangeText={setManualTableId}
+              onChangeText={(text) => {
+                if (isValidTableId(text) || text === '') {
+                  setManualTableId(text);
+                } else {
+                  Alert.alert('Invalid Input', 'Please enter a valid table number (integer >= 0).');
+                }
+              }}
               value={manualTableId}
             />
             <View style={styles.alertButtons}>

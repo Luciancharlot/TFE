@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { database } from '../firebase';
 import { ref, onValue, remove, update, set,get } from 'firebase/database';
+import BackButton from '../components/BackButton';
 
 const OrdersInProgress = () => {
   const [orders, setOrders] = useState([]);
@@ -48,7 +49,7 @@ const OrdersInProgress = () => {
     if (order.status === 'paid') {
       Alert.alert(
         'Order Paid',
-        `Order ${order.id} has already been paid. Do you want to refund it?`,
+        `The order at table ${order.tableID} has already been paid. Do you want to refund it?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -57,9 +58,7 @@ const OrdersInProgress = () => {
             onPress: () => {
               const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
               update(orderRef, { status: 'to be reimbursed' })
-                .then(() => {
-                  Alert.alert('Success', `Order ${order.id} marked for reimbursement.`);
-                })
+              
                 .catch((error) => console.error('Error updating order status:', error));
             },
           },
@@ -75,7 +74,6 @@ const OrdersInProgress = () => {
           remove(orderRef) // Remove from "orders"
             .then(() => {
               setOrders((prevOrders) => prevOrders.filter((o) => o.id !== order.id));
-              Alert.alert('Success', `Order ${order.id} moved to removed orders.`);
             })
             .catch((error) => console.error('Error removing order:', error));
         })
@@ -89,7 +87,6 @@ const OrdersInProgress = () => {
         if (order.status === 'to be reimbursed') {
             const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
             await update(orderRef, { status: 'removed and reimbursed' });
-            Alert.alert('Success', `Order ${order.id} marked as reimbursed.`);
             return; // Sortir de la fonction après avoir traité ce cas
         }
 
@@ -137,8 +134,6 @@ const OrdersInProgress = () => {
           status: 'validated',
           validated_date: new Date().toISOString(),
       });
-
-      Alert.alert('Success', `Order ${order.id} validated successfully.`);
   } catch (error) {
       console.error('Error handling order validation:', error.message);
       Alert.alert('Error', 'Failed to handle the order validation.');
@@ -150,8 +145,6 @@ const OrdersInProgress = () => {
       // Mettre à jour le statut de la commande dans la base de données
       const orderRef = ref(database, `orders/${order.tableID}/${order.id}`);
       await update(orderRef, { status: 'removed and reimbursed' });
-  
-      Alert.alert('Success', `Order ${order.id} has been reimbursed and removed.`);
     } catch (error) {
       console.error('Error updating order status to reimbursed:', error.message);
       Alert.alert('Error', 'Failed to mark the order as reimbursed.');
@@ -233,6 +226,7 @@ const OrdersInProgress = () => {
 
   return (
     <View style={styles.container}>
+      <BackButton />
       <Text style={styles.title}>Orders in Progress</Text>
       <FlatList
         data={orders}
@@ -302,13 +296,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   validateButton: {
+    flex: 3, 
     backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 5, 
+    alignItems: 'center',
   },
   removeButton: {
+    flex: 1, 
     backgroundColor: '#dc3545',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
   },
   reimburseButton: {
+    flex: 3,
     backgroundColor: 'orange',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 5, 
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',

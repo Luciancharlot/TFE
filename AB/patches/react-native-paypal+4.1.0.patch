@@ -1,0 +1,12 @@
+diff --git a/node_modules/react-native-paypal/android/src/main/AndroidManifest.xml b/node_modules/react-native-paypal/android/src/main/AndroidManifest.xml
+index 0f44673..b03d4ad 100644
+--- a/node_modules/react-native-paypal/android/src/main/AndroidManifest.xml
++++ b/node_modules/react-native-paypal/android/src/main/AndroidManifest.xml
+@@ -6,6 +6,7 @@
+   
+   <application android:label="@string/app_name">
+     <activity android:name="com.braintreepayments.api.BraintreeBrowserSwitchActivity"
++      android:exported="false"
+       android:launchMode="singleTask"
+       android:theme="@android:style/Theme.Translucent.NoTitleBar">
+       <intent-filter>

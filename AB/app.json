@@ -4,9 +4,12 @@
     "slug": "AB",
     "version": "1.0.0",
     "orientation": "landscape",
-    "icon": "./assets/Drink-Beer.png",
+    "icon": "./assets/beer_icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain"
@@ -17,9 +20,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Drink-Beer.png"
+        "foregroundImage": "./assets/beer_icon.png"
       },
-      "package": "com.el_coabite.AB"
+      "package": "com.el_coabite.AB",
+      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE","INTERNET",
+  "ACCESS_NETWORK_STATE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +34,9 @@
         "projectId": "37194348-9638-4a15-b495-6c3a98ef8767"
       }
     },
-    "owner": "el_coabite"
+    "owner": "el_coabite",
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }

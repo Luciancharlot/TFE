@@ -1,18 +1,18 @@
 {
-    "cli": {
-      "version": ">= 3.0.0"
+  "cli": {
+    "version": ">= 3.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
     },
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
-      },
-      "production": {
-        "distribution": "store",
-        "android": {
-          "gradleCommand": ":app:assembleRelease"
-        }
+    "production": {
+      "distribution": "store",
+      "android": {
+        "gradleCommand": ":app:assembleRelease"
       }
     }
   }
-  
+}
