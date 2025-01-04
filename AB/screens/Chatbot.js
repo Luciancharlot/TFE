@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import axios from 'axios';
-import { OPENAI_API_KEY } from '@env'; 
+import axios from 'axios'; 
 import BackButton from '../components/BackButton';
+import { database } from '../firebase';
+import { ref, get } from 'firebase/database';
+
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -19,6 +21,7 @@ const Chatbot = () => {
   const [loading, setLoading] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
   const [jsonData, setJsonData] = useState(null);
+  const [openAiApiKey, setOpenAiApiKey] = useState('');
   const flatListRef = useRef(null); 
 
   // Charger et analyser le fichier JSON
@@ -38,6 +41,25 @@ const Chatbot = () => {
     };
   
     loadJsonData();
+  }, []);
+
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const snapshot = await get(ref(database, '/api_keys/openai_key'));
+        if (snapshot.exists()) {
+          const apiKey = snapshot.val();
+          console.log('Clé OpenAI récupérée :', apiKey);
+          setOpenAiApiKey(apiKey); // Stocke la clé dans l'état
+        } else {
+          console.error('Clé OpenAI non trouvée.');
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de la clé OpenAI :', error);
+      }
+    };
+  
+    fetchApiKey();
   }, []);
   
   useEffect(() => {
@@ -107,7 +129,7 @@ const Chatbot = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            Authorization: `Bearer ${openAiApiKey}`,
           },
         }
       );
