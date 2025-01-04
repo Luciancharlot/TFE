@@ -117,6 +117,8 @@ const Chatbot = () => {
                   Une fois que toutes les questions sont posées, proposer 4-5 bières sous forme de noms uniquement en analysant toute les réponses.
                   Si le client indique le numéro d’une des bières proposées, il faut lui expliquer plus précisément les caractéristiques de la bière.
                   Les bières doivent toujours provenir de la feuille Beers du fichier JSON analysé précédemment.
+                  Lors de la recommandation d'une bière, utiliser l'API de Ratebeer pour vérifier si la bière est bien notée et obtenir des informations supplémentaires sur celle-ci.
+                  Lien pour les avis : https://www.ratebeer.com/
                 `,
             },
             ...messages.map((msg) => ({
