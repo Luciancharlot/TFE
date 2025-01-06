@@ -14,4 +14,4 @@ L'application est disponible pour téléchargement [ici](https://expo.dev/artifa
 
 ## Code source
 
-Le code source est disponible sur [GitHub](https://github.com/Luciancharlot/TFE). Contributions et retours sont les bienvenus pour améliorer ce projet.
+Le code source est disponible sur [GitHub](https://github.com/Luciancharlot/TFE/tree/main/AB). Contributions et retours sont les bienvenus pour améliorer ce projet.
