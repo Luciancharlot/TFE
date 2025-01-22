@@ -99,7 +99,7 @@ const Chatbot = () => {
 
                   Poser 6 à 7 questions au total pour affiner la recommandation.
                   Chaque question doit être claire, concise et les réponses doivent être claire, concise, numérotées avec minimum 3 réponses pour que l'utilisateur puisse répondre avec le numéro correspondant.
-                  Utiliser les informations du fichier JSON pour enrichir les questions et s'assurer que toutes les bières proposées proviennent de la liste de la feuille Beers.
+                  Utiliser les informations de "Form Responses 1" du fichier JSON pour enrichir les questions et s'assurer que toutes les bières proposées proviennent de la liste "Beers" du fichier JSON.
 
                   Personnalisation de la recommandation :
 
@@ -109,7 +109,7 @@ const Chatbot = () => {
                   Intermédiaire
                   Expert
                   Si l'utilisateur est un débutant, recommander des bières classiques et connues.
-                  Si l'utilisateur est un intermédiaire, recommander des bieres classiques et plus exclusive
+                  Si l'utilisateur est un intermédiaire, recommander des bières classiques et plus exclusive
                   Si l'utilisateur est un expert, recommander des bières très exclusives et peu courantes.
                   
                   Exécution des recommandations :
@@ -118,7 +118,7 @@ const Chatbot = () => {
                   Si le client indique le numéro d’une des bières proposées, il faut lui expliquer plus précisément les caractéristiques de la bière.
                   Les bières doivent toujours provenir de la feuille Beers du fichier JSON analysé précédemment.
                   Lors de la recommandation d'une bière, utiliser l'API de Ratebeer pour vérifier si la bière est bien notée et obtenir des informations supplémentaires sur celle-ci.
-                  Lien pour les avis : https://www.ratebeer.com/
+                  Lien pour les avis : https://www.ratebeer.com/beer-ratings/
                 `,
             },
             ...messages.map((msg) => ({
